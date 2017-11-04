@@ -1,5 +1,8 @@
-﻿namespace PSXDH.Model
+﻿using System.Xml.Serialization;
+
+namespace PSXDH.Model
 {
+    [XmlType("PsnRecord")]
     public class UrlInfo
     {
         public UrlInfo()
@@ -21,33 +24,38 @@
         /// <summary>
         ///     PSN连接
         /// </summary>
+        [XmlAttribute("PsnUrl")]
         public string PsnUrl { get; set; }
 
         /// <summary>
         ///     替换地址
         /// </summary>
+        [XmlAttribute("LocalUrl")]
         public string ReplacePath { get; set; }
 
         /// <summary>
         ///     当前连接备注信息
         /// </summary>
+        [XmlAttribute("Names")]
         public string MarkTxt { get; set; }
 
         /// <summary>
         ///     离线地址
         /// </summary>
+        [XmlAttribute("LixianUrl")]
         public string LixianUrl { get; set; }
 
         /// <summary>
         ///     是否是线
         /// </summary>
+        [XmlAttribute("isLixian")]
         public bool IsLixian { get; set; }
 
         /// <summary>
         ///     增加为离线
         /// </summary>
         public bool SetLixian { get; set; }
-        
+
         /// <summary>
         /// 是否为CDN地址
         /// </summary>

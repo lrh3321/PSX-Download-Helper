@@ -9,6 +9,8 @@ namespace PSXDH.HttpsHelp
     {
         public UpdataUrlLog UpdataUrlLog;
 
+        public ExceptionHandler ExceptionHandler { get; set; }
+
         public HttpListenerHelp(int port)
             : this(IPAddress.Any, port)
         {
@@ -42,15 +44,17 @@ namespace PSXDH.HttpsHelp
                     client.StartHandshake();
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                this.ExceptionHandler?.Invoke(ex);
             }
             try
             {
                 ListenSocket.BeginAccept(OnAccept, ListenSocket);
             }
-            catch
+            catch (Exception ex)
             {
+                this.ExceptionHandler?.Invoke(ex);
                 Dispose();
             }
         }

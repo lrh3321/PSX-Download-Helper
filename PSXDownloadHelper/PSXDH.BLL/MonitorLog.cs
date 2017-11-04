@@ -41,24 +41,38 @@ namespace PSXDH.BLL
                 "#FFBB00"
             };
 
+        public static Regex[] Rules { get; private set; }
+
+        public static bool BuildRules(string rule)
+        {
+            var rules = rule.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+            if (rules.Length <= 0)
+                return false;
+            var newRules = rules.Select(
+                r =>
+                new Regex(r.ToLower().Replace(".", @"\.").Replace("*", ".*?")))
+                .ToArray();
+            MonitorLog.Rules = newRules;
+            return true;
+        }
+
         /// <summary>
         /// 匹配链接
         /// </summary>
         /// <returns></returns>
         public static bool RegexUrl(string urls)
         {
-            var rules = AppConfig.Instance().Rule.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
-            if (rules.Length <= 0 || String.IsNullOrEmpty(urls))
+            if ((Rules != null && Rules.Length <= 0) || String.IsNullOrEmpty(urls))
                 return false;
 
             return
-                rules.Select(rule => new Regex(rule.ToLower().Replace(".", @"\.").Replace("*", ".*?")))
-                     .Any(regex => regex.Match(urls.ToLower()).Success);
+                Rules.Any(regex => regex.Match(urls.ToLower()).Success);
         }
 
         private static string updatelog = "";
+#if !DEBUG
         private static int? version;
-
+#endif
         /// <summary>
         /// 获取最新版本号
         /// </summary>
@@ -69,17 +83,18 @@ namespace PSXDH.BLL
              * 版本更新检查，如果提供此服务请自行补充。
              * 下面代码为原版检查更新代码
              */
+#if DEBUG
             return 0;
-
+#else
             if (version.HasValue)
                 return version.Value;
-
             const string url = "http://blog.acgpedia.com/extensions/service/update.txt";
             var strValue = GetWebContent(url);
             var regexversion = new Regex(@"#Version:(.*?)#PSX Download Helper", RegexOptions.Singleline);
             var newversion = regexversion.Match(strValue).Groups[1].Value.Replace(".", "");
             version = int.Parse(newversion);
             return version.Value;
+#endif
         }
 
         /// <summary>
@@ -107,7 +122,7 @@ namespace PSXDH.BLL
             try
             {
                 var cdnlist = GetWebContent("http://blog.acgpedia.com/extensions/service/cdnhosts.txt");
-                var sw = new StreamWriter(@"Hosts\CdnHosts.ini",false);
+                var sw = new StreamWriter(@"Hosts\CdnHosts.ini", false);
                 sw.Write(cdnlist);
                 sw.Close();
                 return true;

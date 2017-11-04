@@ -193,17 +193,17 @@ namespace PSXDH.HttpsHelp
         private void SendLocalFile(string localFile, string requestRange, string connection)
         {
             _mLocalFile = new LocalFile(localFile);
-            long startRange;
-            var responseStr = BuildResponse(requestRange, connection, out startRange);
-            _mLocalFile.FileStream.Seek(startRange, SeekOrigin.Begin);
             try
             {
+                var responseStr = BuildResponse(requestRange, connection, out long startRange);
+                _mLocalFile.FileStream.Seek(startRange, SeekOrigin.Begin);
                 ClientSocket.BeginSend(Encoding.ASCII.GetBytes(responseStr), 0, responseStr.Length, SocketFlags.None,
                                        OnLocalFileSent, ClientSocket);
             }
             catch
             {
-                _mLocalFile.FileStream.Close();
+                _mLocalFile?.Dispose();
+                _mLocalFile = null;
                 Dispose();
             }
         }

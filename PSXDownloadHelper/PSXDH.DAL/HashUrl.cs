@@ -3,6 +3,7 @@ using PSXDH.Model;
 using System.Text.RegularExpressions;
 using System.Linq;
 using System;
+using System.IO;
 
 namespace PSXDH.DAL
 {
@@ -64,7 +65,7 @@ namespace PSXDH.DAL
                 //如果开启自动匹配本地文件，则自动查找
                 string filename = GetUrlFileName(psnurl);
                 if (!String.IsNullOrEmpty(filename))
-                    return AppConfig.Instance().LocalFileDirectory + "\\" + filename;
+                    return Path.Combine(AppConfig.Instance().LocalFileDirectory, filename);
 
                 return string.Empty;
             }

@@ -25,11 +25,7 @@ namespace PSXDH.ProxyHelp
             get { return _mAddress; }
             set
             {
-                if (value == null)
-                {
-                    throw new ArgumentNullException();
-                }
-                _mAddress = value;
+                _mAddress = value ?? throw new ArgumentNullException();
                 Restart();
             }
         }
@@ -53,11 +49,7 @@ namespace PSXDH.ProxyHelp
             get { return _mListenSocket; }
             set
             {
-                if (value == null)
-                {
-                    throw new ArgumentNullException();
-                }
-                _mListenSocket = value;
+                _mListenSocket = value ?? throw new ArgumentNullException();
             }
         }
 
@@ -85,11 +77,16 @@ namespace PSXDH.ProxyHelp
                 }
                 try
                 {
-                    ListenSocket.Shutdown(SocketShutdown.Both);
+                    if (ListenSocket.Connected)
+                    {
+                        ListenSocket.Shutdown(SocketShutdown.Both);
+                    }
                 }
-                catch
+                catch (SocketException se)
                 {
+                    System.Diagnostics.Debug.WriteLine(se);
                 }
+                catch { }
                 finally
                 {
                     if (ListenSocket != null)
@@ -103,7 +100,7 @@ namespace PSXDH.ProxyHelp
 
         public void AddClient(Client client)
         {
-            if (Clients.IndexOf(client) == -1)
+            if (Clients.IndexOf(client) == -1 && client != null)
             {
                 Clients.Add(client);
             }
@@ -194,7 +191,7 @@ namespace PSXDH.ProxyHelp
                 if (client != null && Clients.Contains(client))
                     Clients.Remove(client);
             }
-            catch{}
+            catch { }
         }
 
         public void Restart()
@@ -218,7 +215,8 @@ namespace PSXDH.ProxyHelp
             catch
             {
                 ListenSocket = null;
-                throw new SocketException();
+                throw;
+                // throw new SocketException();
             }
         }
 

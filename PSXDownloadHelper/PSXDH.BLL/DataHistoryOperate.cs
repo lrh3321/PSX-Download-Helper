@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using PSXDH.DAL;
+﻿using PSXDH.DAL;
 using PSXDH.Model;
+using System.Collections.Generic;
 
 namespace PSXDH.BLL
 {

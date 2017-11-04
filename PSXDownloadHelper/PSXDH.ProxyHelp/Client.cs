@@ -82,20 +82,11 @@ namespace PSXDH.ProxyHelp
             catch
             {
             }
-            if (ClientSocket != null)
-            {
-                ClientSocket.Close();
-            }
-            if (DestinationSocket != null)
-            {
-                DestinationSocket.Close();
-            }
+            ClientSocket?.Close();
+            DestinationSocket?.Close();
             ClientSocket = null;
             DestinationSocket = null;
-            if (_destroyer != null)
-            {
-                _destroyer(this);
-            }
+            _destroyer?.Invoke(this);
         }
 
         public void OnClientReceive(IAsyncResult ar)
@@ -106,7 +97,7 @@ namespace PSXDH.ProxyHelp
                     return;
 
                 int size = ClientSocket.EndReceive(ar);
-                if (size > 0 && DestinationSocket!=null)
+                if (size > 0 && DestinationSocket != null)
                 {
                     DestinationSocket.BeginSend(Buffer, 0, size, SocketFlags.None, OnRemoteSent, DestinationSocket);
                 }
@@ -121,7 +112,7 @@ namespace PSXDH.ProxyHelp
         {
             try
             {
-                if (ClientSocket!=null&&ClientSocket.EndSend(ar) > 0)
+                if (ClientSocket != null && ClientSocket.EndSend(ar) > 0)
                 {
                     DestinationSocket.BeginReceive(RemoteBuffer, 0, RemoteBuffer.Length, SocketFlags.None,
                                                    OnRemoteReceive, DestinationSocket);
@@ -141,7 +132,7 @@ namespace PSXDH.ProxyHelp
                     return;
 
                 int size = DestinationSocket.EndReceive(ar);
-                if (size > 0 && ClientSocket!=null)
+                if (size > 0 && ClientSocket != null)
                 {
                     ClientSocket.BeginSend(RemoteBuffer, 0, size, SocketFlags.None, OnClientSent, ClientSocket);
                 }
@@ -156,7 +147,7 @@ namespace PSXDH.ProxyHelp
         {
             try
             {
-                if (DestinationSocket.EndSend(ar) > 0 && ClientSocket!=null)
+                if (DestinationSocket.EndSend(ar) > 0 && ClientSocket != null)
                 {
                     ClientSocket.BeginReceive(Buffer, 0, Buffer.Length, SocketFlags.None, OnClientReceive, ClientSocket);
                 }

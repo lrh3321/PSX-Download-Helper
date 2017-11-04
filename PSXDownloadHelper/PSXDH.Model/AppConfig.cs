@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace PSXDH.Model
 {
-    public class AppConfig
+    public class AppConfig : IProxyBindingConfig
     {
         private static AppConfig _instance;
         private static readonly object Lock = new object();
@@ -16,6 +16,23 @@ namespace PSXDH.Model
                 }
 
             return _instance;
+        }
+
+        public static AppConfig DefautConfig;
+
+        static AppConfig()
+        {
+            DefautConfig = new AppConfig()
+            {
+                Language = "zh-CHS",
+                Rule = "*.pkg*|*.pup*",
+                IsUsePcProxy = true,
+                IsUseCdn = true,
+                IsUserLocal = true,
+                IsUseLixian = true,
+                Port = 8080,
+                LocalFileDirectory = "D:\\PssDownload",
+            };
         }
 
         public string Language { get; set; }

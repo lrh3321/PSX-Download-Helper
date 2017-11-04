@@ -13,8 +13,8 @@ namespace PSXDH.DAL
         private static readonly object Lock = new object();
         private static XElement _datas;
 
-        private static readonly string Xmlpath = AppDomain.CurrentDomain.SetupInformation.ApplicationBase +
-                                                 @"\DataFiles\DataHistory.xml";
+        private static readonly string Xmlpath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
+                                                 @"\DataFiles\DataHistory.xml");
 
         public static DataHistory Instance()
         {
@@ -22,12 +22,14 @@ namespace PSXDH.DAL
                 lock (Lock)
                 {
                     _instance = new DataHistory();
-                    if (!File.Exists(Xmlpath))
+                    if (File.Exists(Xmlpath))
+                    {
+                        _datas = XElement.Load(Xmlpath);
+                    }
+                    else
                     {
                         CreatXml();
-                        return _instance;
                     }
-                    _datas = XElement.Load(Xmlpath);
                 }
 
             return _instance;
@@ -41,8 +43,13 @@ namespace PSXDH.DAL
         {
             try
             {
+                FileInfo fileInfo = new FileInfo(Xmlpath);
+                if (!fileInfo.Directory.Exists)
+                {
+                    fileInfo.Directory.Create();
+                }
                 _datas = new XElement("PsnRecords", "");
-                _datas.Save(Xmlpath);
+                _datas.Save(fileInfo.Create());
             }
             catch
             {
@@ -139,13 +146,13 @@ namespace PSXDH.DAL
                 return null;
 
             var ui = new UrlInfo
-                {
-                    PsnUrl = log.Element("PsnUrl").Value,
-                    ReplacePath = log.Element("LocalUrl").Value,
-                    MarkTxt = log.Element("Names").Value,
-                    IsLixian = bool.Parse(log.Element("isLixian").Value),
-                    LixianUrl = log.Element("LixianUrl").Value
-                };
+            {
+                PsnUrl = log.Element("PsnUrl").Value,
+                ReplacePath = log.Element("LocalUrl").Value,
+                MarkTxt = log.Element("Names").Value,
+                IsLixian = bool.Parse(log.Element("isLixian").Value),
+                LixianUrl = log.Element("LixianUrl").Value
+            };
             return ui;
         }
 
