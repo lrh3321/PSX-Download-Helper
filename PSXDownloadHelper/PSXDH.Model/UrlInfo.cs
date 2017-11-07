@@ -1,14 +1,14 @@
-﻿using System.Xml.Serialization;
+﻿using System.Diagnostics;
+using System.Xml.Serialization;
 
 namespace PSXDH.Model
 {
+    [DebuggerDisplay("Remote={PsnUrl}, Host={Host}")]
     [XmlType("PsnRecord")]
     public class UrlInfo
     {
-        public UrlInfo()
+        public UrlInfo() : this(string.Empty, string.Empty, string.Empty, false, string.Empty)
         {
-            SetLixian = false;
-            IsLixian = false;
         }
 
         public UrlInfo(string psnurl, string replacepath, string marktxt, bool isLixian = false, string lixianurl = null)
@@ -19,6 +19,7 @@ namespace PSXDH.Model
             MarkTxt = marktxt;
             LixianUrl = lixianurl;
             IsLixian = isLixian;
+            ThroughHttps = false;
         }
 
         /// <summary>
@@ -65,5 +66,10 @@ namespace PSXDH.Model
         /// 主机地址
         /// </summary>
         public string Host { get; set; }
+
+        /// <summary>
+        /// 指示请求是否为Https协议，true表示请求为Https协议。
+        /// </summary>
+        public bool ThroughHttps { get; set; }
     }
 }

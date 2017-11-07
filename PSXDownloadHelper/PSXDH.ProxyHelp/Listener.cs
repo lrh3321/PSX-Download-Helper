@@ -212,9 +212,9 @@ namespace PSXDH.ProxyHelp
                 ListenSocket.Listen(50);
                 ListenSocket.BeginAccept(OnAccept, ListenSocket);
             }
-            catch
+            catch(Exception ex)
             {
-                ListenSocket = null;
+                _mListenSocket = null;
                 throw;
                 // throw new SocketException();
             }

@@ -1,4 +1,5 @@
 ﻿using PSXDH.BLL;
+using PSXDH.DAL;
 using PSXDH.Model;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Net.Sockets;
 
 namespace PSXDH.HttpsHelp
 {
-    public partial class ProxyServer
+    public class ProxyServer
     {
         public AppConfig Config { get; private set; }
         private IPAddress _address;
@@ -18,7 +19,7 @@ namespace PSXDH.HttpsHelp
         {
             get
             {
-                return _address;
+                return _address ?? IPAddress.Any;
             }
             set
             {
@@ -36,7 +37,7 @@ namespace PSXDH.HttpsHelp
 
         public event UpdataUrlEventHandler UpdataUrl;
 
-        public void OnUpdataUrlLog(UrlInfo urlinfo)
+        private void OnUpdataUrlLog(UrlInfo urlinfo)
         {
             UrlInfo temp = DataHistoryOperate.GetInfo(urlinfo.PsnUrl);
             if (temp != null)
@@ -81,14 +82,12 @@ namespace PSXDH.HttpsHelp
 
         public static IPAddress PickIPAddress(string iP = null)
         {
-            IPAddress addr = null;
-            IPAddress.TryParse(iP, out addr);
+            IPAddress.TryParse(iP, out IPAddress addr);
             if (addr != null)
             {
                 addr = GetHostIp().FirstOrDefault(a => a.ToString() == iP);
             }
-            return addr ?? GetHostIp().FirstOrDefault();
-
+            return addr ?? IPAddress.Any;
         }
 
         public void StartServer()
@@ -98,11 +97,6 @@ namespace PSXDH.HttpsHelp
                 if (!MonitorLog.BuildRules(this.Config.Rule))
                 {
                     throw new NoCaptureRuleException();
-                }
-
-                if (this.Address == null)
-                {
-                    throw new IPAddressNotBindException();
                 }
 
                 _listener = new HttpListenerHelp(this.Address, this.Port, this.OnUpdataUrlLog)
@@ -121,6 +115,7 @@ namespace PSXDH.HttpsHelp
             _listener.Dispose();
             _listener = null;
             this.IsRunning = false;
+            PowerDataHistory.Current.Save();
         }
 
         public ProxyServerInfo ServerInfo()
@@ -128,8 +123,9 @@ namespace PSXDH.HttpsHelp
             return new ProxyServerInfo()
             {
                 Status = this.IsRunning ? 1 : 0,
-                Host = this.Address?.ToString(),
+                IP = this.Address?.ToString(),
                 Port = this.Port,
+                ClientCount = this.IsRunning ? this._listener.Clients.Count : 0,
                 AvaliableAddresses = GetHostIp().Select(ip => ip.ToString()).ToArray(),
             };
         }

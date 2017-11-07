@@ -1,0 +1,13 @@
+language: csharp
+mono: none
+dotnet: 2.0.2
+dist: trusty
+solution: PSXDownloadHelper/PSXDH-Standard.sln
+install:
+  - pushd PSXDownloadHelper
+  - dotnet restore
+  - popd
+script:
+  - pushd PSXDownloadHelper/PSXDH.UnitTest
+  - dotnet xunit
+  - popd

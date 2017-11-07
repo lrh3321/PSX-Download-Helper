@@ -55,17 +55,21 @@ namespace PSXDH.DAL
         {
             try
             {
-                UrlInfo temp = DataHistory.Instance().GetInfo(psnurl);
+                UrlInfo temp = PowerDataHistory.Current.GetInfo(psnurl);
                 if (temp != null && !String.IsNullOrEmpty(temp.ReplacePath))
                     return temp.ReplacePath;
 
-                if (!AppConfig.Instance().IsAutoFindFile)
-                    return String.Empty;
-
-                //如果开启自动匹配本地文件，则自动查找
-                string filename = GetUrlFileName(psnurl);
-                if (!String.IsNullOrEmpty(filename))
-                    return Path.Combine(AppConfig.Instance().LocalFileDirectory, filename);
+                if (AppConfig.Current.IsAutoFindFile)
+                {
+                    //如果开启自动匹配本地文件，则自动查找
+                    string filename = GetUrlFileName(psnurl);
+                    if (!String.IsNullOrEmpty(filename))
+                        return Path.Combine(AppConfig.Current.LocalFileDirectory, filename);
+                }
+                else
+                {
+                    return string.Empty;
+                }
 
                 return string.Empty;
             }
@@ -82,7 +86,7 @@ namespace PSXDH.DAL
         /// <returns></returns>
         public string GetUrlFileName(string psnurl)
         {
-            var rules = AppConfig.Instance().Rule.Split(new char[] { '|' }, System.StringSplitOptions.RemoveEmptyEntries).ToList();
+            var rules = AppConfig.Instance().Rule.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries).ToList();
             if (rules.Count <= 0)
                 return string.Empty;
 

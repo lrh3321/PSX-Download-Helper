@@ -14,6 +14,8 @@ namespace PSXDH.HttpsHelp
 {
     public sealed class HttpClient : Client
     {
+        const string HTTP_METHOD_CONNECT = "CONNECT";
+
         private readonly UpdataUrlLog _updataUrlLog;
         private string _mHttpPost;
         private LocalFile _mLocalFile;
@@ -47,7 +49,7 @@ namespace PSXDH.HttpsHelp
                 int num;
                 string requestedPath;
                 int index;
-                if (HttpRequestType.ToUpper().Equals("CONNECT"))
+                if (HttpRequestType.Equals("CONNECT"))
                 {
                     index = RequestedPath.IndexOf(":");
                     if (index >= 0)
@@ -74,7 +76,7 @@ namespace PSXDH.HttpsHelp
                         requestedPath = HeaderFields["Host"];
                         num = 80;
                     }
-                    if (HttpRequestType.ToUpper().Equals("POST"))
+                    if (HttpRequestType.Equals("POST"))
                     {
                         int tempnum = query.IndexOf("\r\n\r\n");
                         _mHttpPost = query.Substring(tempnum + 4);
@@ -86,18 +88,17 @@ namespace PSXDH.HttpsHelp
                     localFile = UrlOperate.MatchFile(RequestedUrl);
 
                 _uinfo.PsnUrl = string.IsNullOrEmpty(_uinfo.PsnUrl) ? RequestedUrl : _uinfo.PsnUrl;//psnurl賦值
-                if (!HttpRequestType.ToUpper().Equals("CONNECT") && localFile != string.Empty && File.Exists(localFile))
+                if (!HttpRequestType.Equals("CONNECT") && localFile != string.Empty && File.Exists(localFile))
                 {
                     _uinfo.ReplacePath = localFile;
-                    _updataUrlLog(_uinfo);
+                    _updataUrlLog?.Invoke(_uinfo);
                     SendLocalFile(localFile, HeaderFields.ContainsKey("Range") ? HeaderFields["Range"] : null, HeaderFields.ContainsKey("Proxy-Connection") ? HeaderFields["Proxy-Connection"] : null);
                 }
                 else
                 {
                     try
                     {
-                        bool iscdn;
-                        IPAddress hostIp = CdnOperate.GetCdnAddress(requestedPath, out iscdn);
+                        IPAddress hostIp = CdnOperate.GetCdnAddress(requestedPath, out bool iscdn);
                         var remoteEp = new IPEndPoint(hostIp, num);
                         DestinationSocket = new Socket(remoteEp.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                         if (HeaderFields.ContainsKey("Proxy-Connection") &&
@@ -111,9 +112,9 @@ namespace PSXDH.HttpsHelp
                         _uinfo.Host = hostIp.ToString();
                         _uinfo.IsCdn = iscdn;
                         _uinfo.ReplacePath = string.Empty;
-                        _updataUrlLog(_uinfo);
+                        _updataUrlLog?.Invoke(_uinfo);
                     }
-                    catch
+                    catch (Exception ex)
                     {
                         SendBadRequest();
                     }
@@ -123,6 +124,8 @@ namespace PSXDH.HttpsHelp
 
         private Dictionary<string, string> ParseQuery(string query)
         {
+            // TODO https请求
+
             //离线加速
             if (AppConfig.Instance().EnableLixian)
                 query = UrlOperate.GetQuery(query, ref _uinfo);
@@ -135,7 +138,7 @@ namespace PSXDH.HttpsHelp
                 index = strArray[0].IndexOf(' ');
                 if (index > 0)
                 {
-                    HttpRequestType = strArray[0].Substring(0, index);
+                    HttpRequestType = strArray[0].Substring(0, index).ToUpper();
                     strArray[0] = strArray[0].Substring(index).Trim();
                 }
                 index = strArray[0].LastIndexOf(' ');
@@ -160,13 +163,22 @@ namespace PSXDH.HttpsHelp
                 else
                     RequestedPath = RequestedUrl;
             }
+            string key;
             for (int i = 1; i < strArray.Length; i++)
             {
-                index = strArray[i].IndexOf(":");
+                index = strArray[i].IndexOf(':');
                 if ((index <= 0) || (index >= (strArray[i].Length - 1))) continue;
+                key = strArray[i].Substring(0, index);
                 try
                 {
-                    dictionary.Add(strArray[i].Substring(0, index), strArray[i].Substring(index + 1).Trim());
+                    if (dictionary.ContainsKey(key))
+                    {
+                        // TODO 合并Header
+                    }
+                    else
+                    {
+                        dictionary.Add(key, strArray[i].Substring(index + 1).Trim());
+                    }
                 }
                 catch
                 {
@@ -252,16 +264,22 @@ namespace PSXDH.HttpsHelp
             var responseStr = string.Format(response.ToString(), status, DateTime.Now.ToUniversalTime().ToString("r"), _mLocalFile.LastModified.ToUniversalTime().ToString("r"), endRange + 1 - startRange);
             return responseStr;
         }
+        const string BAD_REQUEST_DATA =
+            "HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Type: text/html\r\n\r\nBad Request";
+
+        private static readonly byte[] BadRequestBuffer = Encoding.ASCII.GetBytes(BAD_REQUEST_DATA);
 
         private void SendBadRequest()
         {
-            const string s =
-                "HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Type: text/html\r\n\r\nBad Request";
             try
             {
-                if (ClientSocket != null)
-                    ClientSocket.BeginSend(Encoding.ASCII.GetBytes(s), 0, s.Length, SocketFlags.None, OnErrorSent,
-                                           ClientSocket);
+                ClientSocket?.BeginSend(
+                    BadRequestBuffer,
+                    0,
+                    BadRequestBuffer.Length,
+                    SocketFlags.None,
+                    OnErrorSent,
+                    ClientSocket);
             }
             catch
             {
@@ -275,7 +293,7 @@ namespace PSXDH.HttpsHelp
                 return false;
 
             HeaderFields = ParseQuery(query);
-            return !HttpRequestType.ToUpper().Equals("POST") || !HeaderFields.ContainsKey("Content-Length");
+            return !HttpRequestType.Equals("POST") || !HeaderFields.ContainsKey("Content-Length");
         }
 
         private void OnQuerySent(IAsyncResult ar)
@@ -345,7 +363,7 @@ namespace PSXDH.HttpsHelp
 
                 string str;
                 DestinationSocket.EndConnect(ar);
-                if (HttpRequestType.ToUpper().Equals("CONNECT"))
+                if (HttpRequestType.Equals("CONNECT"))
                 {
                     if (ClientSocket != null)
                     {
@@ -406,8 +424,8 @@ namespace PSXDH.HttpsHelp
                 if (_mLocalFile.FileStream.Position < _mLocalFile.FileStream.Length)
                 {
                     var buffer = new byte[1024 * 4];
-                    _mLocalFile.FileStream.Read(buffer, 0, buffer.Length);
-                    ClientSocket.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, OnLocalFileSent, ClientSocket);
+                    int length = _mLocalFile.FileStream.Read(buffer, 0, buffer.Length);
+                    ClientSocket.BeginSend(buffer, 0, length, SocketFlags.None, OnLocalFileSent, ClientSocket);
                 }
                 else
                 {

@@ -7,14 +7,15 @@ using PSXDH.Model;
 
 namespace PSXDH.DAL
 {
-    public class DataHistory
+    [Obsolete("Use PowerDataHistory instead.")]
+    public class DataHistory : IDataHistory
     {
         private static DataHistory _instance;
         private static readonly object Lock = new object();
         private static XElement _datas;
 
         private static readonly string Xmlpath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
-                                                 @"\DataFiles\DataHistory.xml");
+                                                 @"DataFiles\DataHistory.xml");
 
         public static DataHistory Instance()
         {
@@ -70,10 +71,11 @@ namespace PSXDH.DAL
                                              new XElement("PsnUrl", urlinfo.PsnUrl),
                                              new XElement("LocalUrl", urlinfo.ReplacePath),
                                              new XElement("isLixian", urlinfo.IsLixian),
-                                             new XElement("LixianUrl", urlinfo.LixianUrl)
+                                             new XElement("LixianUrl", urlinfo.LixianUrl),
+                                             new XElement("AddDateTime", DateTime.Now)
                     );
                 _datas.Add(psnrecord);
-                _datas.Save(Xmlpath);
+                this.Save();
                 return true;
             }
             return false;
@@ -90,13 +92,15 @@ namespace PSXDH.DAL
                                          let xElement = el.Element("PsnUrl")
                                          where xElement != null && xElement.Value == urlinfo.PsnUrl
                                          select el);
-            if (log.FirstOrDefault() != null)
+            var result = log.FirstOrDefault();
+            if (result != null)
             {
-                XElement xe = log.FirstOrDefault();
+                XElement xe = result;
                 xe.SetElementValue("Names", urlinfo.MarkTxt);
                 xe.SetElementValue("LocalUrl", urlinfo.ReplacePath);
                 xe.SetElementValue("isLixian", urlinfo.IsLixian);
                 xe.SetElementValue("LixianUrl", urlinfo.LixianUrl);
+                xe.SetElementValue("UpdateDateTime", DateTime.Now);
                 _datas.Save(Xmlpath);
                 return true;
             }
@@ -184,13 +188,18 @@ namespace PSXDH.DAL
                                 where xElement != null && xElement.Value == urlinfo.PsnUrl
                                 select el).FirstOrDefault();
                 if (log != null) log.Remove();
-                _datas.Save(Xmlpath);
+                this.Save();
                 return true;
             }
             catch
             {
                 return false;
             }
+        }
+
+        public void Save()
+        {
+            _datas.Save(Xmlpath);
         }
     }
 }

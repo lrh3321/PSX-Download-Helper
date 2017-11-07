@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace PSXDH.Model
 {
-    public class AppConfig : IProxyBindingConfig
+    public class AppConfig : IProxyBindingConfig, INotifyPropertyChanged
     {
         private static AppConfig _instance;
-        private static readonly object Lock = new object();
+        private static readonly object Lock;
+
+        [Obsolete("Use AppConfig.Current instead.")]
         public static AppConfig Instance()
         {
             if (_instance == null)
@@ -18,10 +21,27 @@ namespace PSXDH.Model
             return _instance;
         }
 
+        public static AppConfig Current
+        {
+            get
+            {
+                return _instance;
+            }
+            set
+            {
+                lock (Lock)
+                {
+                    _instance = value;
+                }
+            }
+        }
+
         public static AppConfig DefautConfig;
 
         static AppConfig()
         {
+            Lock = new object();
+
             DefautConfig = new AppConfig()
             {
                 Language = "zh-CHS",
@@ -52,6 +72,16 @@ namespace PSXDH.Model
         public string Cookie { get; set; }
 
         private static bool _enablelixian;
+
+        #region INotifyPropertyChanged
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+        #endregion
+
         /// <summary>
         ///     是否启用离线
         /// </summary>

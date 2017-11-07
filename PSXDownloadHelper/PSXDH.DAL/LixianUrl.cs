@@ -49,7 +49,7 @@ namespace PSXDH.DAL
             lixianurl = null;
             try
             {
-                UrlInfo temp = DataHistory.Instance().GetInfo(psnurl);
+                UrlInfo temp = PowerDataHistory.Current.GetInfo(psnurl);
                 if (temp != null)
                 {
                     lixianurl = temp.LixianUrl;
